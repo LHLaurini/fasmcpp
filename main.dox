@@ -4,8 +4,9 @@
 
 \section intro_section Introduction
 
-fasmcpp is a library for building assembly code at runtime. It uses <a href=flatassembler.net> Flat
-%Assembler</a>, a light, fast and powerful self-compilable assembler.
+fasmcpp is a library for building assembly code at runtime. It uses
+<a href=https://flatassembler.net/> Flat %Assembler</a>, a light, fast and powerful self-compilable
+assembler.
 
 For now, it only works on Windows and compiles with Visual Studio (I only tested 2017), but I plan
 to port it to Linux and make it compatible with gcc and Clang.
