@@ -5,7 +5,7 @@ Assembler](https://flatassembler.net/), a light, fast and powerful self-compilab
 For now, it only works on Windows and compiles with Visual Studio (I only tested 2017), but I plan
 to port it to Linux and make it compatible with gcc and Clang.
 
-You should take a look at the documentation to get started.
+You should take a look at the [documentation](https://lhlaurini.github.io/fasmcpp/) to get started.
 
 I don't intend to make improvements regularly unless there's some interest from other people. If you
 think you could use fasmcpp in your project and wish for me to implement new features, please feel
