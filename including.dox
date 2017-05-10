@@ -1,0 +1,42 @@
+/*!
+
+\page including Including fasmcpp in your project
+
+This guide assumes you have already compiled and installed fasmcpp. If you haven't already, see
+\ref installation.
+
+\section including_cmake CMake
+
+To include fasmcpp in your CMake project all you have to do is to use \c find_package.
+\code
+find_package("fasmcpp")
+\endcode
+
+It defines the following variables:
+ Variable              |  Value
+---------------------- | -----------------------------------------------------------------------------------------------------------
+\c FASMCPP_FOUND       | 1
+\c FASMCPP_INCLUDE_DIR | Directory that contains fasmcpp.h
+\c FASMCPP_LIBRARY     | Files that you should link against
+\c FASMCPP_BINARY      | Redistributable binaries (you must copy this to your binary folder and distribute it with your executable)
+
+Then you must specify:
+\code
+target_link_libraries(YourTarget ${FASMCPP_LIBRARY})
+target_include_directories(YourTarget PRIVATE ${FASMCPP_INCLUDE_DIR})
+if (FASMCPP_BINARY)
+	get_filename_component(BINARY ${FASMCPP_BINARY} NAME)
+	configure_file("${FASMCPP_BINARY}" "${CMAKE_BINARY_DIR}/${BINARY}" COPYONLY)
+endif()
+\endcode
+
+\section including_other Others
+
+You can also include fasmcpp in your project manually, of course. Open the directory to which you
+installed fasmcpp. It should have 2 or 3 subdirectories, depending on the platform. You must:
+- Add the "include" directory to your compiler's include search path
+- Link your executable with all files in the "lib" directory
+- Copy the contents of the "redist" directory to your binary directory (you must redistribute this
+with your executable)
+
+*/

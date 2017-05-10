@@ -1,0 +1,252 @@
+
+/*!
+
+\page getting_started Getting started
+
+\tableofcontents
+
+This page will guide you through writing a simple "Hello, world!" application using fasmcpp. We'll
+go through the basics of fasmcpp.
+
+\section gs_include Including fasmcpp
+
+To include fasmcpp in your source files, you only need to include a single header file.
+
+\code
+#include <fasmcpp.h>
+\endcode
+
+All public symbols defined in fasmcpp.h are enclosed in the namespace fasmcpp. fasmcpp.h includes
+few other files and some needed headers from the C++ standard library.
+
+Since we're writing a "Hello, world!", we're going to need a function to show our message. We're
+going to use \c printf from assembly and \c std::cout from C++ to display eventual errors.
+
+\code
+#include <iostream>
+\endcode
+
+We're also going to use an optional <tt>using namespace</tt> to enable a small helper which we're
+going to see more about soon.
+
+\code
+using namespace fasmcpp::size_multipliers;
+\endcode
+
+\section gs_initialize Initializing fasmcpp
+
+Initializing fasmcpp is simple. You just have to create an instance of the fasmcpp::Assembler class
+and specify how much memory you want to allocate for the assembler. Note, however, that in some
+platforms you must create no more than one instance or else an exception will be thrown.
+
+Also, here's our little helper. It converts automatically to bytes and in this case is equivalent to
+102400\. A KB is 1024 bytes, a MB is 1024 KB and a GB is 1024 MB. Larger multipliers such as TB
+aren't needed because FASM is written in x86 and has limited access to memory.
+
+\code
+fasmcpp::Assembler assembler;
+
+try
+{
+	assembler = 100_KB;
+}
+\endcode
+
+The constructor can fail by throwing an exception even if we do everything right, so we have to
+construct it in a try block. That's needed because in some platforms the assembler must be loaded
+into a fixed address in memory (0x10000 by default, but it can be changed in CMake) and that address
+may be unavailable.
+
+Our catch block just shows the error and exits with an error code.
+
+\code
+catch (const std::exception& e)
+{
+	std::cout << e.what() << std::endl;
+	return 1;
+}
+\endcode
+
+\section gs_specify Specifying the code to be compiled
+
+To specify the code we want to compile, we must first create an fasmcpp::Assembly class. We are
+going to first create an empty one...
+
+\code
+fasmcpp::Assembly helloWorld;
+\endcode
+
+...And then we're going to set our code. Note that each target platform needs specific code.
+
+\code
+#if defined _WIN64
+	helloWorld = "\
+		use64 \n\
+		sub rsp, 5*8 \n\
+		lea rcx, [string] \n\
+		call [_printf] \n\
+		add rsp, 5*8 \n\
+		ret \n\
+		_printf dq printf \n\
+		string db 'Hello world (from assembly)!', 13, 10, 0 \n\
+	";
+#elif defined _WIN32
+	helloWorld = "\
+		use32 \n\
+		call $+5 \n\
+		mov eax, [esp] \n\
+		add dword[esp], string-5 \n\
+		call [eax+_printf-5] \n\
+		add esp, 4 \n\
+		ret \n\
+		_printf dd printf \n\
+		string db 'Hello world (from assembly)!', 13, 10, 0 \n\
+	";
+#endif
+\endcode
+
+\section gs_analyze A detailed analysis of the code
+
+We're going to analyze the code we're going to compile. Here I've extracted only the content of the
+string we're passing. Keep in mind that <b>we don't know what address the code is going to be
+executed from</b>, so our code <b>must be position-independent</b>.
+
+You should be familiar with assembly, the FASM syntax and the calling conventions before continuing.
+
+\subsection gsa_win64 Windows (x64)
+
+We start by declaring the desired instruction set.
+\code
+use64
+\endcode
+
+We must reserve enough space on the stack for the functions we're going to call to be able to store
+the parameters, plus 16-byte alignment.
+\code
+sub rsp, 5*8
+\endcode
+
+We pass the first and only argument through the \c RCX register. Note that we must use \c lea
+instead of \c mov to pass pointers because \c lea uses a relative address to calculate an absolute
+one, while \c mov just copies the relative address into the destination.
+\code
+lea rcx, [string]
+\endcode
+
+Then we call \c printf, leave the stack pointer as we found it and return.
+\code
+call [_printf]
+add rsp, 5*8
+ret
+\endcode
+
+We define the variable \c _printf which is initialized with a pointer to the \c printf function that
+we're going to supply later.
+\code
+_printf dq printf
+\endcode
+
+And then we define our "Hello, world!" string.
+\code
+string db "Hello world (from assembly)!", 13, 10, 0
+\endcode
+
+\subsection gsa_win32 Windows (x86)
+
+We start by declaring the desired instruction set.
+\code
+use32
+\endcode
+
+Now we need to know \c EIP so we can do relative addressing, but we can't do <tt>mov eax, eip</tt>.
+So we call the next instruction and the CPU will push \c EIP to the stack.
+\code
+call $+5
+\endcode
+
+<tt>[ESP]</tt> is the location our code was loaded to, plus five. So we set our string on the stack
+and call \c printf.
+\code
+mov eax, [esp]
+add dword[esp], string-5
+call [eax+_printf-5]
+\endcode
+
+\c printf is \c __cdecl which means we have to clean up the stack for the arguments we pass.
+\code
+add esp, 4
+ret
+\endcode
+
+We define the variable \c _printf which is initialized with a pointer to the \c printf function that
+we're going to supply later.
+\code
+_printf dq printf
+\endcode
+
+And then we define our "Hello, world!" string.
+\code
+string db "Hello world (from assembly)!", 13, 10, 0
+\endcode
+
+\section gs_assemble Assembling
+
+Before we assemble, we need to first set our Assembler so Assembly knows where to store data during
+the assembling process.
+
+\code
+helloWorld.setAssembler(&assembler);
+\endcode
+
+Also, we have to tell the FASM preprocessor to replace the \c printf symbol with the pointer to the
+actual function.
+\code
+helloWorld.addPredefinition("printf", printf);
+\endcode
+
+Now we're ready to assemble. To do so, just call:
+\code
+bool success = helloWorld.assemble();
+\endcode
+
+Instead of throwing exceptions when it finds errors in the code, \c assemble returns \c false.
+
+\section gs_run Running
+
+If the compilation was successful we can run it. Note however that the \c run method receives a
+\c bool parameter. If \c true, \c run saves all non-volatile registers in the stack, depending on
+the platform and calling convention. If \c false, \c run just runs our code. It's recommended for
+you to be aware of the non-volatile registers, back them up manually and call \c run with a \c false
+argument.
+\code
+if (success)
+{
+	helloWorld.run(false);
+}
+\endcode
+
+\section gs_error Getting errors
+
+If the compilation wasn't successful we have to see what's wrong. To do so we call the \c getErrors
+method which returns a string describing the error. Our code, however, is correct and should
+succeed.
+\code
+else
+{
+	std::cout << helloWorld.getErrors() << std::endl;
+}
+\endcode
+
+If you wish to test this bit of code, you can modify the assembly code and make an intentional typo,
+or even just comment out <tt>helloWorld.addPredefinition("printf", printf);</tt>.
+
+\section gs_entirecode The entire code
+
+Here is everything put together, plus some time measurements. You can find this in example.cpp.
+
+\include example.cpp
+
+I hope this helped you get started with fasmcpp. You can take a look at other guides or at the
+reference.
+
+*/

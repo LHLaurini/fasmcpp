@@ -1,0 +1,28 @@
+/*!
+
+\page installation Installation
+
+This page will guide you through the installation of fasmcpp. However, you should have at least some
+experience with your compiler and CMake.
+
+\section intro_install_requirements Requirements
+
+- CMake
+- Flat %Assembler binary with source (download it from flatassembler.net)
+- Visual Studio (only 2017 tested, but it should work with previous versions)
+
+\section intro_install_instructions Instructions
+
+Set the source and build directories appropriately. It's recommended to use different directories,
+for example, the build directory could be a folder named "build" inside the source directory.
+
+Click "Configure" and select the generator. Currently, only "Visual Studio" and "Visual Studio
+Win64" are supported. Click finish and wait for it to finish. It may show an error "Flat Assembler
+not found": in that case, set \c FASM_PATH to the path to the Flat Assembler executable and click
+"Configure" again. You may want to change the default installation location by editing
+\c CMAKE_INSTALL_PREFIX. Click "Generate" and wait for it to finish.
+
+Build the \c INSTALL target/project. You may need elevated privileges depending on your system and
+the installation location.
+
+*/

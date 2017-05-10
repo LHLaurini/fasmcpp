@@ -1,0 +1,12 @@
+/*!
+
+\page future_improvements Future improvements
+
+-# Support for MinGW
+-# Support for Linux (gcc and Clang)
+-# Support for files (include and file directives)
+-# Custom CSS for Doxygen
+-# More descriptive errors (line number, line content, etc...)
+-# Return number of passes
+
+*/

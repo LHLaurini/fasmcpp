@@ -1,0 +1,27 @@
+display "Fixing object file..."
+
+file '@FASM_OUTPUT@'
+
+virtual at 0
+	find:: db "@feat.00"
+	       dd 1
+	       dw 0xFFFF, 0
+	       db 2
+	find_end:
+end virtual
+
+find_pos = 0
+repeat $
+	load char byte from %-1
+	load find_char byte from find:find_pos
+	if char = find_char
+		find_pos = find_pos + 1
+		if find_pos = find_end
+			char = 3
+			find_pos = 0
+		end if
+	else
+		find_pos = 0
+	end if
+	store byte char at %-1
+end repeat
